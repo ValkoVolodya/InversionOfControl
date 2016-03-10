@@ -8,7 +8,7 @@ var context = {
   module: {},
   console: console,
   // Forward link to fs API into sandbox
-  fs: fs,
+  fs: cloneInterface(fs),
   // Wrapper for setTimeout in sandbox
   setTimeout: function(callback, timeout) {
     // Logging all setTimeout calls
@@ -26,6 +26,35 @@ var context = {
     }, timeout);
   }
 };
+
+function isFunction(fnToCheck){
+  var getType = {};
+  return fnToCheck && getType.toString.call(fnToCheck)=== '[object Function]';
+}
+
+function wrapFunction(fnName, fn){
+  return function wrapper(){
+    var args = [];
+    Array.prototype.push.apply(args, arguments);
+    var last = args.length - 1;
+    if (typeof(args[last]) === 'function') {
+      console.log("Hello!");
+      var cb = args[last];
+      args[last] = wrapFunction(args[last].name, args[last]);
+    }
+    console.log('Call: ' + fnName);
+    console.dir(args);
+    return fn.apply(undefined, args);
+  }
+}
+
+function cloneInterface(interfaceName){
+  var clone = {};
+  for (var key in interfaceName){
+    clone[key] = wrapFunction(key, interfaceName[key]);
+  }
+  return clone;
+}
 
 // Turn hash into context
 context.global = context;
